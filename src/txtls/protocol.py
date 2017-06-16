@@ -3,9 +3,9 @@ from __future__ import absolute_import
 
 import pep543
 
-from zope.interface import providedBy, directlyProvides
+from zope.interface import providedBy, directlyProvides, implementer
 
-from twisted.internet.interfaces import IHandshakeListener
+from twisted.internet.interfaces import IHandshakeListener, INegotiated
 from twisted.internet.protocol import Protocol
 from twisted.protocols.policies import ProtocolWrapper
 from twisted.python.failure import Failure
@@ -13,8 +13,8 @@ from twisted.python.failure import Failure
 from ._membrane import _ProducerMembrane
 
 
-# TODO: Implement INegotiated
 # TODO: Implement any other interfaces TLSMemoryBIOProtocol has.
+@implementer(INegotiated)
 class NativeMemoryTLSProtocol(ProtocolWrapper):
     """
     A wrapping protocol that provides TLS using a platform-native TLS library
@@ -399,3 +399,14 @@ class NativeMemoryTLSProtocol(ProtocolWrapper):
         self.transport.unregisterProducer()
         if self.disconnecting and not self._appSendBuffer:
             self._shutdownTLS()
+
+
+    # Support for INegotiated
+    @property
+    def negotiatedProtocol(self):
+        protocolName = self._tlsConnection.negotiated_protocol
+
+        if isinstance(protocolName, pep543.NextProtocol):
+            protocolName = protocolName.value
+
+        return protocolName
