@@ -38,7 +38,6 @@ class NativeMemoryTLSFactory(WrappingFactory):
             application-level protocol.
 
         :param backend: A PEP 543 backend object to use to create the TLS.
-            TODO: Make this optional and have a way to find the best choice.
 
         :param hostname: A server hostname to connect to, if needed.
         """
