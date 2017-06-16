@@ -3,7 +3,9 @@ from __future__ import absolute_import
 
 import pep543
 
-from twisted.internet.interfaces import ILoggingContext
+from twisted.internet.interfaces import (
+    ILoggingContext, IProtocolNegotiationFactory
+)
 from twisted.protocols.policies import WrappingFactory
 
 from .protocol import NativeMemoryTLSProtocol
@@ -17,7 +19,6 @@ class NativeMemoryTLSFactory(WrappingFactory):
     rather than relying directly on PyOpenSSL this supports PEP 543 to provide
     support for a wide range of TLS implementations.
     """
-    # TODO: Add support for IProtocolNegotiationFactory.
     # TODO: Should a full PEP 543 configuration be provided here? Probably
     #       not. If not, then what?
     protocol = NativeMemoryTLSProtocol
@@ -43,10 +44,19 @@ class NativeMemoryTLSFactory(WrappingFactory):
         """
         # Sigh old-style classes.
         WrappingFactory.__init__(self, wrappedFactory)
+
+        # Support Twisted's style of doing inner protocol negotiation. We only
+        # respect it if the user hasn't provided configuration themselves.
+        if (IProtocolNegotiationFactory.providedBy(self.wrappedFactory) and
+                not configuration.inner_protocols):
+            protocols = self.wrappedFactory.acceptableProtocols()
+            configuration = configuration.update(inner_protocols=protocols)
+
         if isClient:
             self._context = backend.client_context(configuration)
         else:
             self._context = backend.server_context(configuration)
+
         self._hostname = hostname
 
 
