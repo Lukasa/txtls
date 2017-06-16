@@ -5,7 +5,9 @@ import pep543
 
 from zope.interface import providedBy, directlyProvides, implementer
 
-from twisted.internet.interfaces import IHandshakeListener, INegotiated
+from twisted.internet.interfaces import (
+    IHandshakeListener, INegotiated, ISystemHandle
+)
 from twisted.internet.protocol import Protocol
 from twisted.protocols.policies import ProtocolWrapper
 from twisted.python.failure import Failure
@@ -13,8 +15,7 @@ from twisted.python.failure import Failure
 from ._membrane import _ProducerMembrane
 
 
-# TODO: Implement any other interfaces TLSMemoryBIOProtocol has.
-@implementer(INegotiated)
+@implementer(INegotiated, ISystemHandle)
 class NativeMemoryTLSProtocol(ProtocolWrapper):
     """
     A wrapping protocol that provides TLS using a platform-native TLS library
@@ -410,3 +411,11 @@ class NativeMemoryTLSProtocol(ProtocolWrapper):
             protocolName = protocolName.value
 
         return protocolName
+
+    # Support for ISystemHandle
+    def getHandle(self):
+        """
+        We return the PEP 543 wrapped buffers object here, which allows
+        user code to escape PEP 543 interfaces as needed.
+        """
+        return self._tlsConnection
